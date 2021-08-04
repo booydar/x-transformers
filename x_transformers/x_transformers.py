@@ -736,7 +736,8 @@ class TransformerWrapper(nn.Module):
         num_memory_tokens = default(num_memory_tokens, 0)
         self.num_memory_tokens = num_memory_tokens
         if num_memory_tokens > 0:
-            self.memory_tokens = nn.Parameter(torch.randn(num_memory_tokens, dim))
+            # self.memory_tokens = nn.Parameter(torch.randn(num_memory_tokens, dim))
+            self.memory_tokens = repeat(nn.Parameter(torch.randn(dim)), 'd -> n d', n = num_memory_tokens)
 
             # let funnel encoder know number of memory tokens, if specified
             # TODO: think of a cleaner solution
@@ -753,11 +754,39 @@ class TransformerWrapper(nn.Module):
         mask = None,
         return_mems = False,
         return_attn = False,
-        return_memory = True,
+        mem = None,
         mems = None,
         **kwargs
     ):
         b, n, device, num_mem = *x.shape, x.device, self.num_memory_tokens
+
+        if n > self.max_seq_len:
+            chunk = x[:, :self.max_seq_len]
+            rest = x[:, self.max_seq_len:]
+            out_chunk = self.forward(chunk,
+                                    return_embeddings = return_embeddings,
+                                    mask = mask,
+                                    return_mems = return_mems,
+                                    return_attn = return_attn,
+                                    mem = mem,
+                                    mems = mems,
+                                    **kwargs)
+            
+            if num_mem > 0:
+                mem = out_chunk[:, :num_mem]
+
+            out_rest = self.forward(rest,
+                                    return_embeddings = return_embeddings,
+                                    mask = mask,
+                                    return_mems = return_mems,
+                                    return_attn = return_attn,
+                                    mem = mem,
+                                    mems = mems,
+                                    **kwargs)
+            
+            result = torch.cat((out_chunk, out_rest), dim=1)
+            return result
+
         x = self.token_emb(x)
         x += self.pos_emb(x)
         x = self.emb_dropout(x)
@@ -765,7 +794,8 @@ class TransformerWrapper(nn.Module):
         x = self.project_emb(x)
 
         if num_mem > 0:
-            mem = repeat(self.memory_tokens, 'n d -> b n d', b = b)
+            if mem is None:
+                mem = repeat(self.memory_tokens, 'n d -> b n d', b = b)
             x = torch.cat((mem, x), dim = 1)
 
             # auto-handle masking after appending memory tokens
@@ -775,8 +805,8 @@ class TransformerWrapper(nn.Module):
         x, intermediates = self.attn_layers(x, mask = mask, mems = mems, return_hiddens = True, **kwargs)
         x = self.norm(x)
 
-        if not return_memory:
-            mem, x = x[:, :num_mem], x[:, num_mem:]
+        # if not return_memory:
+        #   mem, x = x[:, :num_mem], x[:, num_mem:]
 
         out = self.to_logits(x) if not return_embeddings else x
 
@@ -789,7 +819,8 @@ class TransformerWrapper(nn.Module):
         if return_attn:
             attn_maps = list(map(lambda t: t.post_softmax_attn, intermediates.attn_intermediates))
             return out, attn_maps
-
+        # if not return_memory:
+        #     return out, mem
         return out
 
 class ContinuousTransformerWrapper(nn.Module):
