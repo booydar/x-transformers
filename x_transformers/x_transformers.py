@@ -795,7 +795,7 @@ class TransformerWrapper(nn.Module):
 
         if num_mem > 0:
             if mem is None:
-                mem = repeat(self.memory_tokens, 'n d -> b n d', b = b)
+                mem = repeat(self.memory_tokens, 'n d -> b n d', b = b).to(device=x.device)
             x = torch.cat((mem, x), dim = 1)
 
             # auto-handle masking after appending memory tokens
