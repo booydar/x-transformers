@@ -2,7 +2,7 @@ from .remote.variables import *
 
 import torch, os
 import numpy as np
-from x_transformers.x_transformers import XTransformer
+from .x_transformers.x_transformers import XTransformer
 from torch.utils.tensorboard import SummaryWriter
 
 class data_loader:
