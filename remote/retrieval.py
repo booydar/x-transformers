@@ -9,19 +9,19 @@ def get_three_numbers():
 def create_sequence(one_hot=True):
     letters = get_three_letters()
     numbers = get_three_numbers()
-    X = np.zeros((9))
+    X = np.zeros((9-2))
     y = np.zeros((1))
     for i in range(0, 5, 2):
         X[i] = letters[i//2]
         X[i+1] = numbers[i//2]
 
     # append ??
-    X[6] = 10
-    X[7] = 10
+    # X[6] = 10
+    # X[7] = 10
 
     # last key and respective value (y)
     index = np.random.choice(range(0,3), 1, replace=False)
-    X[8] = letters[index]
+    X[8-2] = letters[index]
     y = numbers[index]
 
     if one_hot:

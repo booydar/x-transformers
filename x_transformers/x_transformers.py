@@ -11,7 +11,7 @@ from einops.layers.torch import Rearrange
 
 from entmax import entmax15
 
-from x_transformers.autoregressive_wrapper import AutoregressiveWrapper
+from .autoregressive_wrapper import AutoregressiveWrapper
 
 # constants
 
@@ -784,7 +784,7 @@ class TransformerWrapper(nn.Module):
                                     mems = mems,
                                     **kwargs)
             
-            result = torch.cat((out_chunk, out_rest), dim=1)
+            result = torch.cat((out_chunk[:, :num_mem], out_rest[:, :num_mem], out_chunk[:, num_mem:], out_rest[:, num_mem:]), dim=1)
             return result
 
         x = self.token_emb(x)
