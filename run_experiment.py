@@ -1,8 +1,8 @@
-from .remote.variables import *
+from remote.variables import *
 
 import torch, os
 import numpy as np
-from .x_transformers.x_transformers import XTransformer
+from x_transformers.x_transformers import XTransformer
 from torch.utils.tensorboard import SummaryWriter
 
 class data_loader:
@@ -27,7 +27,7 @@ class data_loader:
 
 writer = SummaryWriter(log_dir='logs')
 
-def train_validate_model(model, train_generator, val_generator, optimizer, model_name, dec_seq_len=16, num_batches=1e4, verbose=True):
+def train_validate_model(model, train_generator, val_generator, optim, model_name, generate_every=1e3, dec_seq_len=16, num_batches=1e4, verbose=True):
 
     for i in range(num_batches):
 
@@ -38,8 +38,8 @@ def train_validate_model(model, train_generator, val_generator, optimizer, model
         loss.backward()
 
         loss_value = loss.item()
-        if verbose:
-            print(f'{i}: {loss_value}')
+#         if verbose:
+#             print(f'{i}: {loss_value}')
         
         writer.add_scalars("/train/loss", {model_name: loss_value}, i)
         if loss_value < 1e-10:
@@ -48,7 +48,7 @@ def train_validate_model(model, train_generator, val_generator, optimizer, model
         optim.step()
         optim.zero_grad()
 
-        if i != 0 and i % GENERATE_EVERY == 0:
+        if i != 0 and i % generate_every == 0:
             model.eval()
 
             src, tgt, src_mask, _ = next(val_generator)
@@ -79,7 +79,7 @@ def train_validate_model(model, train_generator, val_generator, optimizer, model
     writer.flush()
 
 
-def test_model(model, test_generator, model_name, param, dec_seq_len=16, log_path='logs/test_results.csv'):
+def test_model(model, test_generator, model_name, param, task_name, dec_seq_len=16, log_path='logs/test_results.csv'):
     model.eval()
 
     src, tgt, src_mask, _ = next(test_generator)
@@ -108,7 +108,7 @@ def test_model(model, test_generator, model_name, param, dec_seq_len=16, log_pat
             f.write('accuracy\n')
 
     with open(log_path, 'a') as f:
-        f.write(f'{TASK_NAME},')
+        f.write(f'{task_name},')
         f.write(f'{model_name},')
         for p in param:
             f.write(f'{param[p]},')
