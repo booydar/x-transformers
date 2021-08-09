@@ -1,4 +1,4 @@
-from remote.variables import *
+from .remote.variables import *
 
 import torch, os
 import numpy as np
