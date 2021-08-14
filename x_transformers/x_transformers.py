@@ -761,20 +761,8 @@ class TransformerWrapper(nn.Module):
         b, n, device, num_mem = *x.shape, x.device, self.num_memory_tokens
 
         if n > self.max_seq_len:
-            chunk = x[:, :self.max_seq_len]
-            rest = x[:, self.max_seq_len:]
-            out_chunk = self.forward(chunk,
-                                    return_embeddings = return_embeddings,
-                                    mask = mask,
-                                    return_mems = return_mems,
-                                    return_attn = return_attn,
-                                    mem = mem,
-                                    mems = mems,
-                                    **kwargs)
-            
-            if num_mem > 0:
-                mem = out_chunk[:, :num_mem]
-
+            chunk = x[:, -self.max_seq_len:]
+            rest = x[:, :-self.max_seq_len]
             out_rest = self.forward(rest,
                                     return_embeddings = return_embeddings,
                                     mask = mask,
@@ -784,8 +772,20 @@ class TransformerWrapper(nn.Module):
                                     mems = mems,
                                     **kwargs)
             
-            result = torch.cat((out_chunk[:, :num_mem], out_rest[:, :num_mem], out_chunk[:, num_mem:], out_rest[:, num_mem:]), dim=1)
-            return result
+            if num_mem > 0:
+                mem = out_rest[:, :num_mem]
+
+            out_chunk = self.forward(chunk,
+                                    return_embeddings = return_embeddings,
+                                    mask = mask,
+                                    return_mems = return_mems,
+                                    return_attn = return_attn,
+                                    mem = mem,
+                                    mems = mems,
+                                    **kwargs)
+            
+            # result = torch.cat((out_chunk[:, :num_mem], out_rest[:, :num_mem], out_chunk[:, num_mem:], out_rest[:, num_mem:]), dim=1)
+            return out_chunk
 
         x = self.token_emb(x)
         x += self.pos_emb(x)
