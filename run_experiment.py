@@ -2,6 +2,7 @@ from remote.variables import *
 
 import torch, os
 import numpy as np
+import pandas as pd
 from x_transformers.x_transformers import XTransformer
 from torch.utils.tensorboard import SummaryWriter
 
@@ -79,7 +80,7 @@ def train_validate_model(model, train_generator, val_generator, optim, model_nam
     writer.flush()
 
 
-def test_model(model, test_generator, model_name, param, task_name, dec_seq_len=16, log_path='logs/test_results.csv'):
+def test_model(model, test_generator, model_name, param, task_name, tag, dec_seq_len=16, log_path='logs/test_results.csv'):
     model.eval()
 
     src, tgt, src_mask, _ = next(test_generator)
@@ -99,42 +100,37 @@ def test_model(model, test_generator, model_name, param, task_name, dec_seq_len=
 
     accuracy = num_correct / total_batch_len
 
-    if not os.path.exists(log_path):
-        with open(log_path, 'a') as f:
-            f.write('task_name,')
-            f.write('model_name,')
-            for p in param:
-                f.write(f'{p},')
-            f.write('accuracy\n')
+    param['tag'] = tag
+    param['task_name'] = task_name
+    param['model_name'] = model_name
+    param['accuracy'] = accuracy.cpu().item()
 
-    with open(log_path, 'a') as f:
-        f.write(f'{task_name},')
-        f.write(f'{model_name},')
-        for p in param:
-            f.write(f'{param[p]},')
-        f.write(f'{accuracy}\n')
+    if os.path.exists(log_path):
+        df = pd.read_csv(log_path)
+        df = df.append(param, ignore_index=True)
+    else: 
+        df = pd.DataFrame([param])
+    df.to_csv(log_path, index=False)
 
-    return accuracy
+# if __name__ == "__main__":
+#     gen_train = data_loader(task_name=f'{TASK_NAME}_train', batch_size=BATCH_SIZE, enc_seq_len=ENC_SEQ_LEN, dec_seq_len=DEC_SEQ_LEN)
+#     gen_val = data_loader(task_name=f'{TASK_NAME}_val', batch_size=VAL_SIZE, enc_seq_len=ENC_SEQ_LEN, dec_seq_len=DEC_SEQ_LEN)
+#     gen_test = data_loader(task_name=f'{TASK_NAME}_test', batch_size=TEST_SIZE, enc_seq_len=ENC_SEQ_LEN, dec_seq_len=DEC_SEQ_LEN)
 
-if __name__ == "__main__":
-    gen_train = data_loader(task_name=f'{TASK_NAME}_train', batch_size=BATCH_SIZE, enc_seq_len=ENC_SEQ_LEN, dec_seq_len=DEC_SEQ_LEN)
-    gen_val = data_loader(task_name=f'{TASK_NAME}_val', batch_size=VAL_SIZE, enc_seq_len=ENC_SEQ_LEN, dec_seq_len=DEC_SEQ_LEN)
-    gen_test = data_loader(task_name=f'{TASK_NAME}_test', batch_size=TEST_SIZE, enc_seq_len=ENC_SEQ_LEN, dec_seq_len=DEC_SEQ_LEN)
+#     for param in list(model_parameters):
+#         print(param)
+#         for init_num in range(NUM_INITS):
+#             print(init_num)
+#             model = XTransformer(**param).cuda()
 
-    for param in list(model_parameters):
-        print(param)
-        for init_num in range(NUM_INITS):
-            print(init_num)
-            model = XTransformer(**param).cuda()
+#             model_name = f"{TASK_NAME}_dim{param['dim']}d{param['enc_depth']}h{param['enc_heads']}M{param['enc_num_memory_tokens']}l{ENC_SEQ_LEN}_v{init_num}"
 
-            model_name = f"{TASK_NAME}_dim{param['dim']}d{param['enc_depth']}h{param['enc_heads']}M{param['enc_num_memory_tokens']}l{ENC_SEQ_LEN}_v{init_num}"
-
-            optim = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-            train_validate_model(model, 
-                                train_generator=gen_train, 
-                                val_generator=gen_val, 
-                                optimizer=optim, 
-                                model_name=model_name, 
-                                dec_seq_len=DEC_SEQ_LEN,
-                                num_batches=NUM_BATCHES)
-            test_model(model, gen_test, model_name, param, DEC_SEQ_LEN)
+#             optim = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+#             train_validate_model(model, 
+#                                 train_generator=gen_train, 
+#                                 val_generator=gen_val, 
+#                                 optimizer=optim, 
+#                                 model_name=model_name, 
+#                                 dec_seq_len=DEC_SEQ_LEN,
+#                                 num_batches=NUM_BATCHES)
+#             test_model(model, gen_test, model_name, param, DEC_SEQ_LEN)
