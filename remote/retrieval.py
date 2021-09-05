@@ -1,27 +1,31 @@
 import numpy as np
 
-def get_three_letters():
-    return np.random.choice(range(11,26+11), 3, replace=False)
+# K = 4
 
-def get_three_numbers():
-    return np.random.choice(range(10), 3, replace=False)
+def get_three_letters(K):
+    replace = K > 26
+    return np.random.choice(range(11,26+11), K, replace=replace)
 
-def create_sequence(one_hot=True):
-    letters = get_three_letters()
-    numbers = get_three_numbers()
-    X = np.zeros((9))
+def get_three_numbers(K):
+    replace = K > 10
+    return np.random.choice(range(10), K, replace=replace)
+
+def create_sequence(K, one_hot=True):
+    letters = get_three_letters(K)
+    numbers = get_three_numbers(K)
+    X = np.zeros((2*K + 1))
     y = np.zeros((1))
-    for i in range(0, 5, 2):
+    for i in range(0, 2*K, 2):
         X[i] = letters[i//2]
         X[i+1] = numbers[i//2]
 
     # append ??
-    X[6] = 10
-    X[7] = 10
+#     X[6] = 10
+#     X[7] = 10
 
     # last key and respective value (y)
-    index = np.random.choice(range(0,3), 1, replace=False)
-    X[8] = letters[index]
+    index = np.random.choice(range(0,K), 1, replace=False)
+    X[2*K] = letters[index]
     y = numbers[index]
 
     if one_hot:

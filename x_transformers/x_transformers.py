@@ -11,7 +11,7 @@ from einops.layers.torch import Rearrange
 
 from entmax import entmax15
 
-from x_transformers.autoregressive_wrapper import AutoregressiveWrapper
+from .autoregressive_wrapper import AutoregressiveWrapper
 
 # constants
 
@@ -484,7 +484,7 @@ class AttentionLayers(nn.Module):
         attn_kwargs, _ = groupby_prefix_and_trim('attn_', kwargs)
 
         dim_head = attn_kwargs.get('dim_head', DEFAULT_DIM_HEAD)
-
+        
         self.dim = dim
         self.depth = depth
         self.layers = nn.ModuleList([])
@@ -761,9 +761,9 @@ class TransformerWrapper(nn.Module):
         b, n, device, num_mem = *x.shape, x.device, self.num_memory_tokens
 
         if n > self.max_seq_len:
-            chunk = x[:, :self.max_seq_len]
-            rest = x[:, self.max_seq_len:]
-            out_chunk = self.forward(chunk,
+            chunk = x[:, -self.max_seq_len:]
+            rest = x[:, :-self.max_seq_len]
+            out_rest = self.forward(rest.detach(),
                                     return_embeddings = return_embeddings,
                                     mask = mask,
                                     return_mems = return_mems,
@@ -773,9 +773,9 @@ class TransformerWrapper(nn.Module):
                                     **kwargs)
             
             if num_mem > 0:
-                mem = out_chunk[:, :num_mem]
+                mem = out_rest[:, :num_mem]
 
-            out_rest = self.forward(rest,
+            out_chunk = self.forward(chunk,
                                     return_embeddings = return_embeddings,
                                     mask = mask,
                                     return_mems = return_mems,
@@ -784,8 +784,8 @@ class TransformerWrapper(nn.Module):
                                     mems = mems,
                                     **kwargs)
             
-            result = torch.cat((out_chunk, out_rest), dim=1)
-            return result
+            # result = torch.cat((out_chunk[:, :num_mem], out_rest[:, :num_mem], out_chunk[:, num_mem:], out_rest[:, num_mem:]), dim=1)
+            return out_chunk
 
         x = self.token_emb(x)
         x += self.pos_emb(x)
@@ -889,7 +889,7 @@ class XTransformer(nn.Module):
         super().__init__()
         enc_kwargs, kwargs = groupby_prefix_and_trim('enc_', kwargs)
         dec_kwargs, kwargs = groupby_prefix_and_trim('dec_', kwargs)
-
+        
         assert 'dim' not in enc_kwargs and 'dim' not in dec_kwargs, 'dimension of either encoder or decoder must be set with `dim` keyword'
         enc_transformer_kwargs = pick_and_pop(['num_tokens', 'max_seq_len'], enc_kwargs)
         enc_transformer_kwargs['num_memory_tokens'] = enc_kwargs.pop('num_memory_tokens', None)
