@@ -1,6 +1,6 @@
-from remote.variables import *
-from remote.retrieval import *
-from remote.listops import *
+from .remote.variables import *
+from .remote.retrieval import *
+from .remote.listops import *
 import numpy as np
 import torch
 

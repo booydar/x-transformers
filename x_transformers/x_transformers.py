@@ -763,7 +763,11 @@ class TransformerWrapper(nn.Module):
         if n > self.max_seq_len:
             chunk = x[:, -self.max_seq_len:]
             rest = x[:, :-self.max_seq_len]
+<<<<<<< HEAD
             out_rest = self.forward(rest.detach(),
+=======
+            out_rest = self.forward(rest,
+>>>>>>> 7ba9a1fb194a7c76521d60a5bd3409c5ea94d9f4
                                     return_embeddings = return_embeddings,
                                     mask = mask,
                                     return_mems = return_mems,
