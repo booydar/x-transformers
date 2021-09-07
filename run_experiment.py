@@ -125,26 +125,3 @@ def test_model(model, test_generator, model_name, param, task_name, tag, dec_seq
     else: 
         df = pd.DataFrame([param])
     df.to_csv(log_path, index=False)
-
-# if __name__ == "__main__":
-#     gen_train = data_loader(task_name=f'{TASK_NAME}_train', batch_size=BATCH_SIZE, enc_seq_len=ENC_SEQ_LEN, dec_seq_len=DEC_SEQ_LEN)
-#     gen_val = data_loader(task_name=f'{TASK_NAME}_val', batch_size=VAL_SIZE, enc_seq_len=ENC_SEQ_LEN, dec_seq_len=DEC_SEQ_LEN)
-#     gen_test = data_loader(task_name=f'{TASK_NAME}_test', batch_size=TEST_SIZE, enc_seq_len=ENC_SEQ_LEN, dec_seq_len=DEC_SEQ_LEN)
-
-#     for param in list(model_parameters):
-#         print(param)
-#         for init_num in range(NUM_INITS):
-#             print(init_num)
-#             model = XTransformer(**param).cuda()
-
-#             model_name = f"{TASK_NAME}_dim{param['dim']}d{param['enc_depth']}h{param['enc_heads']}M{param['enc_num_memory_tokens']}l{ENC_SEQ_LEN}_v{init_num}"
-
-#             optim = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
-#             train_validate_model(model, 
-#                                 train_generator=gen_train, 
-#                                 val_generator=gen_val, 
-#                                 optimizer=optim, 
-#                                 model_name=model_name, 
-#                                 dec_seq_len=DEC_SEQ_LEN,
-#                                 num_batches=NUM_BATCHES)
-#             test_model(model, gen_test, model_name, param, DEC_SEQ_LEN)
