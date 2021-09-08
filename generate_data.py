@@ -1,6 +1,6 @@
-from .remote.variables import *
-from .remote.retrieval import *
-from .remote.listops import *
+from remote.variables import *
+from remote.retrieval import *
+from remote.listops import *
 import numpy as np
 import torch
 
@@ -21,8 +21,8 @@ def generate_data(generator, task_name, path='data', train_size=10_000, val_size
     np.save(f'{path}/{task_name}_val_X.npy', Xs[train_size:train_size+val_size].cpu())
     np.save(f'{path}/{task_name}_val_y.npy', ys[train_size:train_size+val_size].cpu())
 
-    np.save(f'{path}/{task_name}_test_X.npy', Xs[train_size+val_size:].cpu())
-    np.save(f'{path}/{task_name}_test_y.npy', ys[train_size+val_size:].cpu())
+    np.save(f'{path}/{task_name}_test_X.npy', Xs[train_size+val_size:train_size+val_size+test_size].cpu())
+    np.save(f'{path}/{task_name}_test_y.npy', ys[train_size+val_size:train_size+val_size+test_size].cpu())
 
 
 class copy_generator:
